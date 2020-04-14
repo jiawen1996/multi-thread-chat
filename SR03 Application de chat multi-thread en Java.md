@@ -123,7 +123,7 @@ On crée une classe d'exception `PanneServeurException` afin de générer un mes
 Ce package contient des classes dédiées au mécanisme HeartBeat. Étant donné que les messages de Heartbeat doivent être envoyés tout le temps, nous devons les simplifier autant que possible afin de réduire la pression sur le serveur et le client durant le traitement des paquets de Heartbeat. C'est pour cette raison que nous avons créé une classe spécifique `HBMessage`.
 * Classe HBMessage qui ne contient que son temps de création
 
-    ```java=
+    ```java
     public class HBMessage implements Serializable {
             public String toString() {
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
@@ -131,7 +131,7 @@ Ce package contient des classes dédiées au mécanisme HeartBeat. Étant donné
     }    
     ```
 * Classe TextMessage qui contient un champ `msg`
-    ```java=
+    ```java
     public class TextMessage implements Serializable{
         private String msg = "";
 
@@ -211,7 +211,7 @@ La classe **server** contient la méthode `main()` pour exécuter le programme S
 
 Tout d'abord, nous générons un socket de connexion  au port prédéfini à l'aide de la commande `new ServerSocket(PORT_NUMBER)`. 
 
-```java=
+```java
 // Le socket de connexion au port 1234
 try {
     serverSocket = new ServerSocket(PORT_NUMBER);
@@ -225,7 +225,7 @@ Lorsque le socket de connexion est créé, il rentre dans une boucle infinie pou
 
 Troisièmement, nous créons un nouveau thread **MessageReceptor** en utilisant la commande `new MessageReceptor(socketClient, listClient)` et puis nous démarrons le thread pour qu'il commence son traitement des messages.  
 
-```java=
+```java
 int numeroClient = 0;
 while (true) {
 	client = serverSocket.accept();
@@ -247,7 +247,7 @@ La classe **client** contient la méthode `main()` pour exécuter le programme C
 
 Dès le démarrage, un socket client est créé pour envoyer une demande de connexion au port du serveur. Lorsque la connexion est établie, nous exécutons deux threads pour envoyer et recevoir les messages.
 
-```java=
+```java
 public static void main(String args[]) throws UnknownHostException, IOException {
 	// Établir la connexion
 	Socket s = new Socket("localhost", ServerPort);
@@ -299,14 +299,14 @@ La méthode `run()` s'exécute lorsque le thread est démarré. Elle effectue d
 * Demander le pseudonyme du client. Vérifier les données entrées pour que le pseudonyme ne contienne pas des caractères particuliers "@,!" et soit unique.
 * Créer et lancer le thread **HeartbeatListener** pour commencer le suivi d'état vivant de programme client
 * Annoncer le pseudonyme du client à tout client actif à l'aide de `sendObject()`
-```java=
+```java
 public void sendObject(MessageReceptor destination, Object obj) throws IOException {
     destination.outputStream.writeObject(obj);
     destination.outputStream.flush();
 }
 ```
 * Commencer la communication continue entre le serveur et le client. Le serveur reçoit le message de client, s'il est un message de HeartBeat, on l'ajoute à la liste `hbMsgList` par la méthode `hbMsgHandler()`. Sinon, il diffuse le message aux autres clients à l'aide de la méthode `broadcast()`. La communication se termine lorsque le serveur reçoit un message dont le contenu est "exit".
-```java=		
+```java		
 while (true) {
     //Récupérer le messages entrants
 	Object obj = inputStream.readObject();
@@ -329,7 +329,7 @@ while (true) {
 ```
 * Une fois qu'il sort de la boucle, il va fermer le socket de communication avec le client en utilisant la méthode `terminerSocket()`.
 
-```java=		
+```java		
 public void terminerSocket() {
     try {
 	System.out.println(this.clientName + " se déconnecte.");
@@ -381,7 +381,7 @@ Les composants de la classe **ReceiveMessage** :
     * `void interpreterMessage()` : interpreter le message reçu. Si le message est un acquittement du serveur, on l'ajout à la list hbMsgList. Sinon, on récupère le contenu du message et l'affecte à la `receivedMsg`
     * `void terminerSocket()` : mettre en pause de 20 millisecondes afin d'attendre que le serveur ferme complètement le socket et puis il ferme le flux d'entrée, ainsi que son propre socket
     
-```java=
+```java
 public void terminerSocket() {
     // Attendre que le serveur ferme la connexion
     try {
@@ -401,7 +401,7 @@ public void terminerSocket() {
 ```
 * La méthode principale : **void run()**
 Une boucle tourne continûment pour recevoir des messages entrants. Le message reçu est pré-traité par `interpreterMessage()`. Le contenu de message reçu s'affiche sur la console. Le processus se répète jusqu'à quand l'objet reçoit le message indique "Vous avez quitté la conversation". Il quitte la boucle et ferme le socket par `terminerSocket()`
-```java=
+```java
 // Récupérer les messages jusqu'à quand il reçoit le message de fin
 while (!this.closed) {
     try {
@@ -438,7 +438,7 @@ La classe **SendMessage** est assez simple, elle crée et démarre un objet de l
 Les méthodes service `sendObject()` ressemble à celle utilisée par **MessageReceptor**, alors que la méthode `terminerSocket()` des threads **SendMessage** et **ReceiveMessage** sont identiques.
 
 * La méthode principale : **void run()**
-```java=
+```java
 public void run() {
     // Démarrer le heartbeatAgent dans le thread de sendMessage
     HeartbeatAgent heartbeatAgent = new HeartbeatAgent(outputStream, this.closed);
@@ -489,14 +489,14 @@ Nous vous avons expliqué le principe général du mécanisme de heartbeat. Pour
 ##### 1. Comment envoyer d'objet `HBMessage`
 
 On crée une fonction commune qui permet d'envoyer un objet de `HBMessage` ou `TextMessage` en fonction du paramètre reçu à l'aide de `java.io.ObjectOutputStream`.
-```java=
+```java
 public void sendObject(Object obj) throws IOException {
     this.oos.writeObject(obj);
     this.oos.flush();
 	}
 ```
 Donc on peut la mettre dans une boucle infinite du thread `HeartbeatAgent`.
-```java=
+```java
 // HeartbeatAgent.java
 while (!this.closed) {
     this.sendObject(new HBMessage());
@@ -508,7 +508,7 @@ while (!this.closed) {
 Une fois que le thread reçoit un objet de message, il appliquera la fonction `interpreterMessage()`. Nous atteignons à récupérer d'objet envoyé par l'autre côté à travers de la méthode `readObject()`, et puis on le détecte par l'opérateur `insranceof` qui nous permet de savoir si cet objet est un type donné. 
 * Si oui, on l'ajoute dans notre queue de `HeartbeatListener`.
 * Sinon, il s'agit que cet objet est plutôt un objet de `TextMessage`.
-```java=
+```java
 public void interpreterMessage() throws ClassNotFoundException, IOException {
     Object obj = this.inputStream.readObject();
     if (obj instanceof HBMessage) {
@@ -521,7 +521,7 @@ public void interpreterMessage() throws ClassNotFoundException, IOException {
 ```
 ##### 3. Comment juger l'état de l'autre côté à partir des HBMessage reçus
 On sait le fait que le message reçu précédemment sera d'abord ajouté à la file d'attente, et la file lira et supprimera l‘élément en-tête toutes les `DEFAULT_READ_PERIOD` / 1000 secondes. C'est-à-dire qu'une fois la file d'attente vide, cela signifie que, récemment, le thread n'a pas reçu de message, ce qui nécessite de lui rappeler d'attirer l'attention. Dans ce cas-là, nous pouvons attendre un intervalle de temps(`DEFAULT_CHECK_PERIOD`) pour confirmer que le thread ne recevoir plus de nouveaux messages. Donc, on arrive à conclure que l'autre côté avait du problème sur la connexion. Ensuite, on retournera une erreur à travers d'une exception personnalisée et aussi terminera ce socket.
-```java=
+```java
 //HeartbeatListener.java
 ...
 public void checkClientAlive() throws PanneClientException {
